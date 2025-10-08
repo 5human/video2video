@@ -25,7 +25,7 @@ def build_frame(frame: cp.ndarray, division, frame_size) -> cp.ndarray:  # NOQA
         (frame.shape[0], frame_size, height_step, width_step, 3)
     )
 
-    frame = cp.abs(frame - key_buffer)
+    frame = cp.maximum(frame, key_buffer) - cp.minimum(frame, key_buffer)
     index = cp.argmin(cp.sum(frame, axis=(2, 3, 4)), axis=1)
     frame = key_buffer[index].astype(cp.uint8)
 
@@ -48,12 +48,13 @@ if __name__ == '__main__':
     # VRAM 거지ㅜㅜ
     division = 20
     max_buffer_size = 500
-    batch_size = 16
+    batch_size = 32
     # =======================================================
 
     print(f"Reading video... ({input_file})")
     video_reader = VideoReader(input_file, ctx=cpu(0))
     frames = len(video_reader)
+    max_buffer_size = min(max_buffer_size, frames)
 
     if bad_resolution(*video_reader[0].shape[:2], division):
         print("Bad Resolution!")
@@ -61,7 +62,7 @@ if __name__ == '__main__':
 
     indices = np.linspace(0, frames - 1, num=max_buffer_size, dtype=int)
     buffer = video_reader.get_batch(indices)  # NOQA
-    buffer = cp.asarray(buffer.asnumpy(), dtype=cp.int16)
+    buffer = cp.asarray(buffer.asnumpy(), dtype=cp.uint8)
 
     zoom_factors = (1, 1 / division, 1 / division, 1)
     key_buffer = ndi.zoom(buffer, zoom_factors, order=1)
@@ -83,7 +84,7 @@ if __name__ == '__main__':
             break
 
         batch = video_reader.get_batch(batch_index).asnumpy()
-        batch = cp.asarray(batch, dtype=cp.int16)
+        batch = cp.asarray(batch, dtype=cp.uint8)
 
         for j in range(batch.shape[0]):
             f = build_frame(batch[j], division, max_buffer_size)
