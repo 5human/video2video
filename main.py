@@ -10,9 +10,10 @@ from tqdm import tqdm
 
 
 key_buffer: cp.ndarray
+key_buffer_exp: cp.ndarray
 
 
-def build_frame(frame: cp.ndarray, division, frame_size) -> cp.ndarray:  # NOQA
+def build_frame(frame: cp.ndarray, division: int, frame_size: int ) -> cp.ndarray:  # NOQA
     height_step = frame.shape[0] // division
     width_step = frame.shape[1] // division
 
@@ -20,13 +21,12 @@ def build_frame(frame: cp.ndarray, division, frame_size) -> cp.ndarray:  # NOQA
     frame = frame.transpose(0, 2, 1, 3, 4)
     frame = frame.reshape(-1, height_step, width_step, 3)
 
-    frame = cp.broadcast_to(
-        cp.expand_dims(frame, axis=1),
-        (frame.shape[0], frame_size, height_step, width_step, 3)
-    )
+    frame = frame[:, None, :, :, :]
 
-    frame = cp.maximum(frame, key_buffer) - cp.minimum(frame, key_buffer)
-    index = cp.argmin(cp.sum(frame, axis=(2, 3, 4)), axis=1)
+    frame = cp.maximum(frame, key_buffer_exp) - cp.minimum(frame, key_buffer_exp)
+    frame = cp.sum(frame, axis=(2, 3, 4))
+
+    index = cp.argmin(frame, axis=1)
     frame = key_buffer[index]
 
     frame = frame.reshape(division, division, height_step, width_step, 3)
@@ -66,6 +66,8 @@ if __name__ == '__main__':
 
     zoom_factors = (1, 1 / division, 1 / division, 1)
     key_buffer = ndi.zoom(buffer, zoom_factors, order=1).astype(cp.uint8)
+    key_buffer_exp = key_buffer[None, :, :, :, :]
+
     del buffer
 
     print(f"Buffer Shape: {key_buffer.shape}")
