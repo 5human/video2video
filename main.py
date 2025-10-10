@@ -13,7 +13,7 @@ key_buffer: cp.ndarray
 key_buffer_exp: cp.ndarray
 
 
-def build_frame(frame: cp.ndarray, division: int, frame_size: int ) -> cp.ndarray:  # NOQA
+def build_frame(frame: cp.ndarray, division: int) -> cp.ndarray:  # NOQA
     height_step = frame.shape[0] // division
     width_step = frame.shape[1] // division
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         batch = cp.asarray(batch, dtype=cp.uint8)
 
         for j in range(batch.shape[0]):
-            f = build_frame(batch[j], division, max_buffer_size)
+            f = build_frame(batch[j], division)
             f = f.get()
             f = cvtColor(f, COLOR_RGB2BGR)
 
