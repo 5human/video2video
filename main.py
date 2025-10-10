@@ -45,7 +45,6 @@ if __name__ == '__main__':
     input_file = 'input.mp4'
     output_file = 'output.mp4'
 
-    # VRAM 거지ㅜㅜ
     division = 20
     max_buffer_size = 500
     batch_size = 32
@@ -68,7 +67,7 @@ if __name__ == '__main__':
     key_buffer = ndi.zoom(buffer, zoom_factors, order=1).astype(cp.uint8)
     key_buffer_exp = key_buffer[None, :, :, :, :]
 
-    del buffer
+    del buffer, indices, zoom_factors
 
     print(f"Buffer Shape: {key_buffer.shape}")
 
@@ -96,6 +95,8 @@ if __name__ == '__main__':
             writer.write(f)
 
     writer.release()
+
+    del key_buffer, key_buffer_exp, video_reader
 
     video_clip = VideoFileClip(output_file)
     audio_clip = VideoFileClip(input_file).audio
